@@ -1,35 +1,64 @@
 import { PlusIcon, XIcon } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { useFetcher } from "react-router-dom";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-import { AppActions } from "~/reducer";
+import { useToast } from "./ui/use-toast";
 
 type CreateColumnFormProps = {
-  dispatch: React.Dispatch<AppActions>;
+  overflowRef: React.RefObject<HTMLDivElement>;
 };
 
-const CreateColumnForm = ({ dispatch }: CreateColumnFormProps) => {
+const CreateColumnForm = ({ overflowRef }: CreateColumnFormProps) => {
   const [showColumnForm, setShowColumnForm] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const fetcher = useFetcher();
 
-  const [columnTitle, setColumnTitle] = useState("");
+  const { toast } = useToast();
+
+  const scrollRight = () => {
+    if (!overflowRef.current) return;
+    const scrollWidth = overflowRef.current.scrollWidth;
+
+    overflowRef.current.scrollLeft = scrollWidth;
+  };
+
   return (
     <>
       {showColumnForm ? (
-        <form
+        <fetcher.Form
           className="space-y-2"
           onSubmit={(e) => {
             e.preventDefault();
-            dispatch({ type: "CREATE_COLUMN", payload: columnTitle });
-            setColumnTitle("");
+            console.log("yayaya");
+            if (!inputRef.current?.value) {
+              toast({
+                title: "No Empty Field",
+                description: "Column Name cannot be empty",
+              });
+              return;
+            }
+            const formData = new FormData(e.currentTarget);
+            formData.set("id", crypto.randomUUID());
+            fetcher.submit(formData, {
+              method: "POST",
+              navigate: false,
+            });
+            scrollRight();
             setShowColumnForm(false);
+            inputRef.current.value = "";
           }}
         >
           <label htmlFor="column-name" className="sr-only">
             Column{" "}
           </label>
+          <input type="hidden" name="intent" value="create-column" />
           <Input
-            value={columnTitle}
-            onChange={(e) => setColumnTitle(e.target.value)}
+            name="name"
+            id="name"
+            placeholder="Enter Column Name"
+            ref={inputRef}
+            autoFocus
           />
           <div className="flex justify-between">
             <Button>Create Column</Button>
@@ -37,7 +66,7 @@ const CreateColumnForm = ({ dispatch }: CreateColumnFormProps) => {
               <XIcon />
             </Button>
           </div>
-        </form>
+        </fetcher.Form>
       ) : (
         <Button onClick={() => setShowColumnForm(true)}>
           <PlusIcon />

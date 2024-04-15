@@ -9,4 +9,18 @@ export default defineConfig({
       "~": path.resolve(__dirname, "./src"),
     },
   },
+  server: {
+    proxy: {
+      "/tasks": {
+        target: "http://localhost:5000",
+        changeOrigin: true,
+        secure: false,
+      },
+      "/columns": {
+        target: "http://localhost:5000",
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
 });
